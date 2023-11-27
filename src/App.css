@@ -1,0 +1,97 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem;
+  text-align: center;
+  min-height: 100vh;
+  min-width: 100%;
+  display: flex;
+  justify-content: center;
+}
+[data-overlay-container=true] {
+  min-height: 100%;
+  min-width: 100%;
+}
+.loader {
+  transition: opacity 5s;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+.customInvisible {
+  opacity: 0;
+  pointer-events: none;
+}
+.custonVisible {
+  opacity: 1;
+}
+.loaderBar {
+  display: block;
+  --height-of-loader: 4px;
+  --loader-color: #0071e2;
+  width: 130px;
+  height: var(--height-of-loader);
+  border-radius: 30px;
+  background-color: rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.loaderBar::before {
+  content: "";
+  position: absolute;
+  background: var(--loader-color);
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  border-radius: 30px;
+  animation: moving 1s ease-in-out infinite;
+  ;
+}
+
+.sidebar {
+  transition: width 0.5s ease; 
+}
+.sidebar.collapsed {
+  width: 60px;
+}
+.sidebar.collapsed .flex div {
+  display: none; /* Ocultar texto en versión plegada */
+  white-space: nowrap; /* No permitir saltos de línea */
+}
+
+
+.rotate-icon {
+  transition: transform 0.3s ease-in-out;
+}
+
+.rotate-icon.rotated {
+  transform: rotate(180deg); /* Puedes ajustar el ángulo según tus necesidades */
+}
+
+@media screen and (max-width: 1200px) {
+  .sidebar {
+    width: 60px !important;
+  }
+  .sidebar .flex div {
+    display: none !important;
+  }
+
+}
+
+
+@keyframes moving {
+  50% {
+    width: 100%;
+  }
+  100% {
+    width: 0;
+    right: 0;
+    left: unset;
+  }
+}
