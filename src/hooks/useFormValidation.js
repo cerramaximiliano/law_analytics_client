@@ -4,13 +4,12 @@ import { deleteObjectEmptyStrings } from '../utils/objectUtils';
 const useFormValidation = (errors, setErrors, form, setForm, compareValue1, compareValue2) => {
     const numericRegex = /^[1-9]\d*(\.\d+)?$/;
     const integerRegex = /^[1-9]\d*$/;
-
+    const dateRegex = /^(0[1-9]|[1-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/;
     const validateInput = (name, value, otherValues = {}) => {
         switch (name) {
             case 'fechaIngreso':
             case 'fechaEgreso':
             case 'fechaFalsa':
-                const dateRegex = /^(0[1-9]|[1-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/;
                 if (!value.trim()) {
                     return {[name]: 'Campo requerido'}
                 } else if (!dateRegex.test(value)) {
@@ -21,6 +20,14 @@ const useFormValidation = (errors, setErrors, form, setForm, compareValue1, comp
                     return {[name]: ''}
                 }
                 break;
+            case 'fechaRenuncia':
+                if (!value.trim()) {
+                    return {[name]: 'Campo requerido'}
+                } else if (!dateRegex.test(value)) {
+                    return {[name]: 'Formato de fecha incorrecto'}
+                }else{
+                    return {[name]: ''}
+                }
             case 'remuneracion':
             case 'salarioFalso':
             case 'salarioMultas':
@@ -133,6 +140,22 @@ const useFormValidation = (errors, setErrors, form, setForm, compareValue1, comp
                 }
 
                 break
+            case 'destinatario':
+            case 'actividadDestinatario':
+            case 'cuitDestinatario':
+            case 'domicilioDestinatario':
+            case 'cpDestinatario':
+            case 'remitente':
+            case 'dniRemitente':
+            case 'cuilRemitente':
+            case 'domicilioRemitente':
+            case 'cpRemitente':
+            case 'textTelegrama':
+                if(!value.trim()){
+                    return {[name]: 'Campo requerido'}
+                }else{
+                    return {[name]: ''}
+                }
             default:
                 break;
         }
@@ -155,6 +178,7 @@ const useFormValidation = (errors, setErrors, form, setForm, compareValue1, comp
         let errorsInput = {};
         inputs.forEach((input) => {
             let { name, value } = input;
+            console.log(name, value)
             const validation = validateInput(name, value);
             errorsInput = {...errorsInput, ...validation}
         });

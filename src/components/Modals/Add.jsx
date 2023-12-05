@@ -3,9 +3,7 @@ import {Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input}
 import DestinatarioModal from "./ModalBody/DestinatarioModal.jsx";
 import RemitenteModal from "./ModalBody/RemitenteModal.jsx";
 
-
 export default function Add({isOpen, onOpenChange, handleInputChange, modal}) {
-  console.log(modal)
   return (
     <>
       <Modal 
@@ -26,21 +24,13 @@ export default function Add({isOpen, onOpenChange, handleInputChange, modal}) {
                 </ModalHeader>
               <ModalBody>
                 {
-                  modal === 'remitente' && <RemitenteModal/>
+                  modal === 'remitente' && <RemitenteModal handleInputChange={handleInputChange} onClose={onClose} />
                 }
                 {
-                  modal === 'destinatario' && <DestinatarioModal/>
+                  modal === 'destinatario' && <DestinatarioModal handleInputChange={handleInputChange} onClose={onClose}/>
                 }
 
               </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="flat" onPress={onClose}>
-                  Cerrar
-                </Button>
-                <Button color="primary">
-                  Guardar
-                </Button>
-              </ModalFooter>
             </>
           )}
         </ModalContent>

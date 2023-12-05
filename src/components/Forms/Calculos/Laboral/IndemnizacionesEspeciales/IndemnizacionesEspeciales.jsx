@@ -160,7 +160,7 @@ export default function IndemnizacionesEspeciales () {
                         <div className="w-1/2 max-md:w-full">
                                 <Select
                                     aria-label="false"
-                                    placeholder="Seleccione Multa"
+                                    placeholder="Seleccione Régimen"
                                     label="Régimen Indemnizatorio"
                                     labelPlacement="outside"
                                     isRequired
