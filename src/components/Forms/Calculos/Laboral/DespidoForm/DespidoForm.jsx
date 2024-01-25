@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import {Button, Input, Checkbox, Switch, Select, SelectItem, Divider} from "@nextui-org/react";
+import {Button, Input, CheckboxGroup, Checkbox, Switch, Select, SelectItem, Divider} from "@nextui-org/react";
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import useFormValidation from "../../../../../hooks/useFormValidation.js";
 import Cash from "../../../../../assets/icons/Cash.jsx";
@@ -7,12 +7,23 @@ import User from "../../../../../assets/icons/User.jsx";
 import {SolarCalendarMinimalisticBoldDuotone} from "../../../../../assets/icons/Calendar.jsx";
 import Loader from "../../../../Loader/Loader.jsx";
 import { deleteObjectEmptyStrings } from "../../../../../utils/objectUtils.js";
+import { indemnizacion, periodo } from '../../../../../hooks/useCalculator.js'
+import { Calculo } from "../../../../../utils/classCalcUtils.js";
 
 export default function DespidoForm () {
     const [liquidacionFinal, setLiquidacionFinal] = useState(false);
+    const [isInvalid, setIsInvalid] = useState(true);
+
     const [aplicacionTopes, setAplicacionTopes] = useState(false);
+    const [isInvalidTopes, setIsInvalidTopes] = useState(true);
+
     const [aplicacionMultas, setAplicacionMultas] = useState(false);
+    const [isInvalidMultas, setIsInvalidMultas] = useState(true);
+    const [isInvalidMultasSelect, setIsInvalidMultasSelect] = useState(true);
+    
     const [indemnizacionesEspeciales, setIndemnizacionesEspeciales] = useState(false);
+    const [isInvalidIndem, setIsInvalidIndem] = useState(true);
+
     const [salarioProximo, setSalarioProximo] = useState(false);
     const [aplicaFalloVizzoti, setAplicaFalloVizzoti] = useState(false);
     const [aplicaFalloTorrisi, setAplicaFalloTorrisi] = useState(false);
@@ -34,7 +45,9 @@ export default function DespidoForm () {
         const isChecked = event.target.checked;
         setLiquidacionFinal(isChecked);
         setSalarioProximo(!isChecked);
-        setForm({...form,
+        setForm({
+            ...form,
+            liquidacionFinal: isChecked,
             preavisoLiquidacion: false,
             integracionLiquidacion: false,
             sacLiquidacion: false,
@@ -49,6 +62,7 @@ export default function DespidoForm () {
         setIndemnizacionesEspeciales(isChecked)
         setForm({
             ...form,
+            indemnizacionAgravada: isChecked,
             indemnizacionEmbarazo:false,
             indemnizacionDoble:false
         })
@@ -64,6 +78,7 @@ export default function DespidoForm () {
         setSalarioFalso(!isChecked);
         setForm({
             ...form,
+            multas: isChecked,
             multaArt1: false,
             multaArt2: false,
             multaArt80: false,
@@ -78,11 +93,16 @@ export default function DespidoForm () {
         setAplicaFalloTorrisi(!isChecked);
         setForm ({
             ...form,
+            topes: isChecked,
             vizzotiIndeminacion: false,
             torrisiIndeminizacion: false
         })
     }
     const handleSelectChange = (value) => {
+        setForm({
+            ...form,
+            multaLey24031: value.target.value
+        })
         if (value.target.value === "2") {
             setFechaIngresoFalsa(true);
             setSalarioFalso(false);
@@ -92,19 +112,79 @@ export default function DespidoForm () {
         }else {
             setFechaIngresoFalsa(false);
             setSalarioFalso(false);
+        };
+        if(value.target.value === "0"){
+            setIsInvalidMultasSelect(true);
+        }else{
+            setIsInvalidMultasSelect(false);
         }
     };
     const handleSubmit = async (event) => {
         event.preventDefault();
         const validate = validateSubmit(event);
+
+        console.log(form);
+
+        if (    form.liquidacionFinal && 
+                (!form.preavisoLiquidacion && 
+                !form.integracionLiquidacion && 
+                !form.sacLiquidacion && 
+                !form.sacPreavisoLiquidacion && 
+                !form.diasLiquidacion && 
+                !form.vacacionesLiquidacion )){
+            validate.liquidacionFinal = 'Debe seleccionar al menos una opción';
+            setErrors({...errors, liquidacionFinal: 'Debe seleccionar al menos una opción'});
+        };
+        if( form.multas &&
+            (!form.multaArt1 &&
+            !form.multaArt2 &&
+            !form.multaArt15 &&
+            !form.multaArt80 &&
+            !form.multaLey24031
+            )){
+            validate.multas = `Debe seleccionar al menos una opción`;
+            setErrors({...errors, multas: 'Debe seleccionar al menos una opción'});
+        };
+        if( form.indemnizacionAgravada &&
+            (!form.indemnizacionDoble &&
+            !form.indemnizacionEmbarazo) ){
+            validate.indemnizacionAgravada = `Debe seleccionar al menos una opción`;
+            setErrors({...errors, indemnizacionAgravada: 'Debe seleccionar al menos una opción'});
+        };
+        if( form.topes &&
+            (!form.torrisiIndeminizacion &&
+            !form.vizzotiIndeminacion)
+            ){
+            validate.topes = `Debe seleccionar al menos una opción`;
+            setErrors({...errors, topes: 'Debe seleccionar al menos una opción'});
+        };
+        console.log(validate)
+
         if( Object.keys(validate).length === 0 ) {
             deleteObjectEmptyStrings(form)
-            console.log('hacer calculo')
+            console.log('hacer calculo');
+            console.log(form);
             // setLoading(true);
             // setTimeout(() => {
             //     console.log(form);
             //     setLoading(false);
             //   }, 10000);
+
+            const resultCalculo = new Calculo(form)
+
+            const resultPeriodo = periodo(
+                fechaIngreso,
+                fechaEgreso,
+                form.dias
+            );
+            const resultIndemnizacion = indemnizacion(
+                resultPeriodo,
+                form.remuneracion,
+            );
+
+            console.log(resultCalculo);
+
+
         }else{
             console.log('quedan campos que completar')
         }
@@ -236,7 +316,7 @@ export default function DespidoForm () {
                     <SolarCalendarMinimalisticBoldDuotone className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
                 }
                 type="text" 
-                label="Desc. días" 
+                label="Descontar días no trabajados"
                 labelPlacement="outside"
                 className="max-w-xs"
                 name="dias"
@@ -248,7 +328,7 @@ export default function DespidoForm () {
                 </div>
             </div>
             <div className="w-[48%]  mt-4 self-center max-md:w-[80%] flex justify-center">
-                <Checkbox size="m" color="default" name="incluirSAC" onChange={handleChecked}>Incluir SAC</Checkbox>
+                <Checkbox size="sm" color="default" name="incluirSAC" onChange={handleChecked}>Incluir SAC</Checkbox>
             </div>                
         </div>
         <Divider className="mt-3 mb-5"/>
@@ -260,35 +340,52 @@ export default function DespidoForm () {
         <div ref={parent}>
         {
             liquidacionFinal && (
+                
                 <div className="flex flex-row mt-3 max-md:flex-col max-md:ml-[25%]">
-                <div className="w-1/2 flex flex-col max-md:w-full">
-                    <Checkbox size="m" color="default" name="preavisoLiquidacion" onChange={handleChecked}>Preaviso</Checkbox>
-                    <Checkbox size="m" color="default" name="integracionLiquidacion" onChange={handleChecked}>Integración mes</Checkbox>
-                    <Checkbox size="m" color="default" name="sacLiquidacion" onChange={handleChecked}>SAC proporcional</Checkbox>
-                    <Checkbox size="m" color="default" name="salarioLiquidacion" className="mt-3" onChange={(value) => {(setSalarioProximo(value.target.checked)); handleChecked(value)}}>Salario próximo</Checkbox>
-                </div>
-                <div className="w-1/2 flex flex-col max-md:w-full">
-                    <Checkbox size="m" color="default" name="sacPreavisoLiquidacion" onChange={handleChecked}>SAC s/ Preaviso</Checkbox>
-                    <Checkbox size="m" color="default" name="diasLiquidacion" onChange={handleChecked}>Días trabajados</Checkbox>
-                    <Checkbox size="m" color="default" name="vacacionesLiquidacion" onChange={handleChecked}>Vacaciones</Checkbox>
-                    {salarioProximo && 
-                        <Input 
-                        startContent={
-                            <Cash className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
-                        }
-                        type="text" 
-                        label="Salario próximo" 
-                        labelPlacement="outside" 
+                    <div className="w-1/2 flex flex-col max-md:w-full">
+                    <CheckboxGroup
                         isRequired
-                        className="mt-3 max-w-xs"
-                        name="salarioProximo"
-                        onChange={handleInputChange}
-                        onBlur={handleInputChange}
-                        color={errors.salarioProximo ? 'danger' : 'default'}
-                        errorMessage={errors.salarioProximo}
-                        />
-                    }
-                </div>
+                        isInvalid={isInvalid}
+                        label="Seleccione las opciones de cálculo"
+                        errorMessage={isInvalid && 'Debe seleccionar un opción'}
+                        onValueChange={(value) => {
+                            setIsInvalid(value.length < 1);
+                        }}
+                        className="m-auto"
+                        >
+                        <Checkbox className="max-w-xs" size="m" color="default" value="preavisoLiquidacion" name="preavisoLiquidacion" onChange={handleChecked}>Preaviso</Checkbox>
+                        <Checkbox size="m" color="default" value="integracionLiquidacion" name="integracionLiquidacion" onChange={handleChecked}>Integración mes</Checkbox>
+                        <Checkbox size="m" color="default" value="sacLiquidacion" name="sacLiquidacion" onChange={handleChecked}>SAC proporcional</Checkbox>
+                        <Checkbox size="m" color="default" value="sacPreavisoLiquidacion" name="sacPreavisoLiquidacion" onChange={handleChecked}>SAC s/ Preaviso</Checkbox>
+                        <Checkbox size="m" color="default" value="diasLiquidacion" name="diasLiquidacion" onChange={handleChecked}>Días trabajados</Checkbox>
+                        <Checkbox size="m" color="default" value="vacacionesLiquidacion" name="vacacionesLiquidacion" onChange={handleChecked}>Vacaciones</Checkbox>
+                    </CheckboxGroup>
+                    </div>
+                    <div className="w-1/2 flex flex-col max-md:w-full">
+                        <Checkbox size="m" color="default" name="salarioLiquidacion" className="mt-3 mr-auto ml-auto" onChange={(value) => {(setSalarioProximo(value.target.checked)); handleChecked(value)}}>Salario próximo</Checkbox>
+                        {salarioProximo && 
+                            <div className="mt-[20px]">
+                            <Input 
+                            startContent={
+                                <Cash className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
+                            }
+                            type="text" 
+                            label="Salario próximo" 
+                            labelPlacement="outside" 
+                            isRequired
+                            className="max-w-xs mr-auto ml-auto"
+                            name="salarioProximo"
+                            onChange={handleInputChange}
+                            onBlur={handleInputChange}
+                            color={errors.salarioProximo ? 'danger' : 'default'}
+                            errorMessage={errors.salarioProximo}
+                            />
+                            </div>
+
+                        }
+                        </div>
+
+
             </div>
             )
         }
@@ -308,18 +405,26 @@ export default function DespidoForm () {
                 aplicacionTopes && (
                     <div>
                             <div className="flex flex-row mt-3">
-                            <div className="w-1/2">
-                                <Checkbox size="m" color="default" name="vizzotiIndeminacion" onChange={(value) => {setAplicaFalloVizzoti(value.target.checked); handleChecked(value)}}>Aplicar "Vizzoti"</Checkbox>
-                            </div>
-                            <div className="w-1/2">
-                                <Checkbox size="m" color="default" name="torrisiIndeminizacion" onChange={(value) => {setAplicaFalloTorrisi(value.target.checked); handleChecked(value)}}>Aplicar "Torrisi"</Checkbox>
-                            </div>
+                            <CheckboxGroup
+                                isRequired
+                                isInvalid={isInvalidTopes}
+                                label="Seleccione las opciones de cálculo"
+                                errorMessage={isInvalidTopes && 'Debe seleccionar un opción'}
+                                onValueChange={(value) => {
+                                    setIsInvalidTopes(value.length < 1);
+                                }}
+                                className="m-auto"
+                                >
+                                <Checkbox size="m" color="default" value="vizzotiIndeminacion" name="vizzotiIndeminacion" onChange={(value) => {setAplicaFalloVizzoti(value.target.checked); handleChecked(value)}}>Aplicar "Vizzoti"</Checkbox>
+                                <Checkbox size="m" color="default" value="torrisiIndeminizacion" name="torrisiIndeminizacion" onChange={(value) => {setAplicaFalloTorrisi(value.target.checked); handleChecked(value)}}>Aplicar "Torrisi"</Checkbox>
+                            </CheckboxGroup>
+
                         </div>
                         <div ref={parent}>
                             {
                                 (aplicaFalloVizzoti || aplicaFalloTorrisi) && (
                                     <div className="flex mt-3">
-                                        <div className="w-1/2">
+                                        <div className="w-1/1 m-auto">
                                         <Input
                                             startContent={
                                                 <Cash className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
@@ -358,36 +463,47 @@ export default function DespidoForm () {
                 aplicacionMultas && (
                     <div>
                     <div className="flex flex-row mt-3">
-                        <div className="w-1/2 flex flex-col">
-                            <Checkbox size="m" color="default" name="multaArt1" onChange={handleChecked}>Multa Ley 25.323 art. 1</Checkbox>
-                            <Checkbox size="m" color="default" name="multaArt2" onChange={handleChecked}>Multa Ley 25.323 art. 2</Checkbox>
-                        </div>
-                        <div className="w-1/2 flex flex-col">
-                            <Checkbox size="m" color="default" name="multaArt80" onChange={handleChecked}>Multa art. 80 LCT</Checkbox>
-                        </div>
+                            <CheckboxGroup
+                                isRequired
+                                isInvalid={isInvalidMultas && isInvalidMultasSelect}
+                                label="Seleccione una o más opciones de cálculo"
+                                onValueChange={(value) => {
+                                    setIsInvalidMultas(value.length < 1);
+                                }}
+                                className="m-auto"
+                                >
+                                <Checkbox size="m" color="default" value="multaArt1" name="multaArt1" onChange={handleChecked}>Multa Ley 25.323 art. 1</Checkbox>
+                                <Checkbox size="m" color="default" value="multaArt2" name="multaArt2" onChange={handleChecked}>Multa Ley 25.323 art. 2</Checkbox>
+                                <Checkbox size="m" color="default" value="multaArt80" name="multaArt80" onChange={handleChecked}>Multa art. 80 LCT</Checkbox>
+                                <Checkbox size="m" color="default" value="multaArt15" name="multaArt15" onChange={handleChecked}>Art. 15 Ley 24.013</Checkbox>
+                            </CheckboxGroup>
+
+
                     </div>
                     <div className="flex flex-col">
-                        <div className="flex flex-row mt-3 max-md:flex-col">
-                            <div className="w-1/2 flex">
+                        <div className="flex flex-col mt-3">
+                            <div className="max-w-[50%] self-center min-w-[30%]">
                                 <Select
+                                    isRequired
+                                    isInvalid={isInvalidMultas && isInvalidMultasSelect}
                                     aria-label="false"
-                                    placeholder="Seleccione Multa"
+                                    placeholder="Seleccione Multa Ley 24.013"
                                     labelPlacement="outside"
-                                    className="max-w-xs text-current"
+                                    className="text-current w-100"
                                     disableSelectorIconRotation
-                                    name="indeminizacionRegimen"
+                                    name="indemnizacionRegimen"
                                     onChange={(value) => {
                                         handleSelectChange(value);
                                         handleInputChange(value);
                                     }}
                                     >
-                                    <SelectItem className="text-black" key={0} value={"0"}>Seleccione Multa</SelectItem>
+                                    <SelectItem className="text-black" key={0} value={"0"}>Seleccione Multa Ley 24.013</SelectItem>
                                     <SelectItem className="text-black" key={1} value={"1"}>Art. 8</SelectItem>
                                     <SelectItem className="text-black" key={2} value={"2"}>Art. 9</SelectItem>
                                     <SelectItem className="text-black"  key={3} value={"3"}>Art. 10</SelectItem>
                                 </Select>
                             </div>
-                            <div className="w-1/2 max-md:mt-4" ref={parent}>
+                            <div className="max-md:mt-4 m-auto mt-[10px]" ref={parent}>
                                 {
                                     fechaIngresoFalsa && (
                                         <Input
@@ -432,14 +548,14 @@ export default function DespidoForm () {
                                 }
                             </div>
                         </div>
-                        <div className="flex flex-row mt-3">
-                                <Checkbox size="m" color="default" name="multaArt15" onChange={handleChecked}>Art. 15 Ley 24.013</Checkbox>
-                        </div>
-                        <div className="flex flex-row mt-3">
-                            <div className="w-1/2">
+
+
+
+                        <div className="flex flex-col mt-3 m-auto">
+
                                 <Checkbox size="m" color="default" name="multaSalario" onChange={(value) => {setSalarioMultas(value.target.checked); handleChecked(value)}}>Salario Multas</Checkbox>
-                            </div>
-                            <div className="w-1/2" ref={parent}>
+
+                            <div className="mt-[10px]" ref={parent}>
                                 {
                                     salarioMultas && (
                                         <Input 
@@ -478,12 +594,21 @@ export default function DespidoForm () {
             {
                 indemnizacionesEspeciales && (
                     <div className="flex flex-row mt-3">
-                        <div className="w-1/2">
-                        <Checkbox size="m" color="default" name="indemnizacionEmbarazo" onChange={handleChecked}>Indemnización por Matrimonio</Checkbox>
-                        </div>
-                        <div className="w-1/2">
-                        <Checkbox size="m" color="default" name="indemnizacionDoble" onChange={handleChecked}>Doble Indemnización</Checkbox>
-                        </div>
+                            <CheckboxGroup
+                                isRequired
+                                isInvalid={isInvalidIndem}
+                                label="Seleccione las opciones de cálculo"
+                                errorMessage={isInvalidIndem && 'Debe seleccionar un opción'}
+                                onValueChange={(value) => {
+                                    setIsInvalidIndem(value.length < 1);
+                                }}
+                                className="m-auto"
+                                >
+                                <Checkbox size="m" color="default" value="indemnizacionEmbarazo" name="indemnizacionEmbarazo" onChange={handleChecked}>Indemnización por Matrimonio</Checkbox>
+                                <Checkbox size="m" color="default" value="indemnizacionDoble"  name="indemnizacionDoble" onChange={handleChecked}>Doble Indemnización</Checkbox>
+                            </CheckboxGroup>
+
+
                     </div>
                 )
             }

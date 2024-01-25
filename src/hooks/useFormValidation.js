@@ -94,7 +94,6 @@ const useFormValidation = (errors, setErrors, form, setForm, compareValue1, comp
                     return {[name]: ''}
                 }
                 break
-            case 'indeminizacionRegimen':
             case 'ingresosMensuales':
                 if(value == 0) return {[name]: 'Debe elegir una opción'}
                 else return {[name]: ''}
@@ -140,6 +139,7 @@ const useFormValidation = (errors, setErrors, form, setForm, compareValue1, comp
                 }
 
                 break
+
             case 'destinatario':
             case 'actividadDestinatario':
             case 'cuitDestinatario':
@@ -178,7 +178,6 @@ const useFormValidation = (errors, setErrors, form, setForm, compareValue1, comp
         let errorsInput = {};
         inputs.forEach((input) => {
             let { name, value } = input;
-            console.log(name, value)
             const validation = validateInput(name, value);
             errorsInput = {...errorsInput, ...validation}
         });
